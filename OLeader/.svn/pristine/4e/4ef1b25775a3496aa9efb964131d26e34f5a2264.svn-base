@@ -1,0 +1,107 @@
+package sample;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Properties;
+
+import javax.ws.rs.Path;
+
+import org.codehaus.jettison.json.JSONArray;
+
+@Path("weibo")
+public class SinaWeibo {
+	
+    private static Properties prop = new Properties();
+	
+	static 
+	{
+		 InputStream in=null;
+	      //读取属性文件
+  		try {
+  			in = Thread.currentThread().getContextClassLoader().getResourceAsStream("config/googleplus.properties");
+  	        prop.load(in);
+  			}
+  		catch (IOException e) {
+  				// TODO Auto-generated catch block
+  				e.printStackTrace();
+  			}
+	}
+	
+	
+	/**
+	 * 根据URL获取数据
+	 * @param APIUrl
+	 * @return
+	 */
+	public static String getAPIData(String APIUrl)
+	{
+        String result = "";
+        BufferedReader br = null;
+        String url = APIUrl,token="";
+        String proxyAddr = prop.getProperty("proxyAddr");
+		int tokenCount = Integer.parseInt(prop.getProperty("gplus.keyNum"));
+        int proxyPort = Integer.parseInt(prop.getProperty("proxyPort"));
+        
+		URL connectURL = null;
+		URLConnection ucon = null;
+		//设置代理
+		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyAddr, proxyPort));
+        
+		boolean flag = true;
+		int index =0;
+	//	for(int i=0;i<tokenCount;i++)
+		while(flag)
+		{
+			result = "";
+			token = prop.getProperty("gplus.accessToken"+index);
+			url = url.replace("{YOUR_API_KEY}", token);
+			flag = false;
+			try {
+				// 建立连接 
+				connectURL = new URL(url);
+
+				ucon = connectURL.openConnection(proxy);
+				ucon.connect();			
+		        // 定义 BufferedReader输入流来读取URL的响应
+		        br = new BufferedReader(new InputStreamReader(
+		            ucon.getInputStream(),"utf-8"));
+		        String line;
+		        while ((line = br.readLine()) != null) {
+		                result += line;
+		            }
+		        br.close();
+				
+			} catch (IOException e) {
+				System.out.println("Here"+index);
+//				System.out.println("result::"+result);
+//				System.out.println("Length::"+result.length());
+	//			e.printStackTrace();
+				flag = true;
+			}//第一次是空
+			/**
+			 * 判断是否获取到网络数据，如果获取成功，跳出循环,
+			 * 否则使用新的token重新获取数据
+			 */
+			index = index +1;
+		}
+
+		return result;
+	}
+
+	/**
+	 * 根据关键词搜索 
+	 * @param keyword
+	 * @return
+	 */
+	//根据关键词搜索
+	public static JSONArray searchByKeyword(String keyword)
+	{
+			return null;
+	}
+}
